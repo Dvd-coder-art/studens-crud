@@ -1,0 +1,14 @@
+# arquivos de ambiente
+.env
+
+
+#cache de python
+__pycache__/
+*.pyc
+
+#IDEs e editores
+.vscode/
+.idea/
+
+#Outros
+*.log
