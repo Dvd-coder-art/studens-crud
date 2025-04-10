@@ -121,7 +121,16 @@ class Alunos:
         
          
 
-        
+  def gerarRelatorio(self):
+      conexao = conectar()
+      cursor = conexao.cursor()
+      cursor.execute("SELECT matricula FROM tabelanota")
+      resultado = cursor.fetchall()
+      cursor.close()
+      conexao.close()
+
+      print(resultado)
+      
 
 
   def imprimir(self):
@@ -145,8 +154,7 @@ def limpar_tela():
 
 
 aluno = Alunos()
-aluno.listarAlunos()
-aluno.updateNota()
+aluno.gerarRelatorio()
 
 # while True:
 #   resposta = input("Deseja cadastrar um novo aluno? (s/n): ")
