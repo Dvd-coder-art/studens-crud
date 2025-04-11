@@ -3,14 +3,14 @@ import re
 import mysql.connector
 from dotenv import load_dotenv 
 
-load_dotenv
+load_dotenv()
 
 def conectar():
     return mysql.connector.connect(
         host='localhost',
         user=os.getenv('DB_USER'),
         password=os.getenv('DB_PASS'),
-        database=os.getenv('DB_NAME')
+        database=os.getenv('DB_NAME'),
         )
 
 
@@ -49,7 +49,7 @@ class Alunos:
                 if 0 <= nota <= 10:
                     self.nota = nota
                     print("Nota cadastrada com sucesso!")
-                    cursor.execute(f'INSERT INTO tabelanota (nome,matricula,nota) VALUES ("{self.nome}","{self.matricula}","{self.nota}")')
+                    cursor.execute('INSERT INTO tabelanota (nome,matricula,nota) VALUES (%s,%s,%s)',(self.nome,self.matricula,self.nota))
                     conexao.commit()
                       
             
@@ -74,7 +74,7 @@ class Alunos:
          print(self.matriculas)
          self.matricula = input("Digite a Matrícula do aluno para deletar:")
 
-      cursor.execute(f'DELETE FROM tabelanota WHERE matricula="{self.matricula}"')
+      cursor.execute('DELETE FROM tabelanota WHERE matricula=%s', (self.matricula))
       conexao.commit() 
       print("Matrícula deletada com sucesso!")
       
@@ -108,12 +108,15 @@ class Alunos:
             print(self.matriculas)
             self.matricula = input("Digite a Matrícula do aluno para atualizar: ")
             
-        nota_nova = float(input("Digit a nova nota: "))
-        while nota_nova > 10.0 or nota_nova <0.0:
-            nota_nova = float(input("Digite nota de 0 a 10: "))
+        nota_nova = input("Digit a nova nota: ")
+        nota_float = float(nota_nova.replace(",", "."))
+        
+        while nota_float > 10.0 or nota_float <0.0:
+            nota_nova = input("Digite nota de 0 a 10: ")
+            nota_float = float(nota_nova.replace(",", "."))
 
-        nota_new= str(nota_nova)
-        cursor.execute('UPDATE tabelanota SET nota=%s WHERE matricula= %s',(nota_new,self.matricula))
+        nota_new= str(nota_float)
+        cursor.execute('UPDATE tabelanota SET nota=%s WHERE matricula= %s',(nota_float,self.matricula))
         conexao.commit()
         conexao.close()
         cursor.close()
@@ -124,27 +127,50 @@ class Alunos:
   def gerarRelatorio(self):
       conexao = conectar()
       cursor = conexao.cursor()
-      cursor.execute("SELECT matricula FROM tabelanota")
-      resultado = cursor.fetchall()
+      cursor.execute("SELECT nota FROM tabelanota")
+      resultado = [float(m[0]) for m in cursor.fetchall()]
+      tamanho = len(resultado)
+      self.soma = sum(resultado)/tamanho
+      
+      self.maior_nota = resultado[0]
+
+      for i in range(1,(len(resultado))):
+          self.maior_nota = max(resultado)
+          if(resultado[i] > self.maior_nota):
+             self.maior_nota =  resultado[i]
+
+      self.menor_nota = min(resultado)
+      
+    
+          
       cursor.close()
       conexao.close()
 
-      print(resultado)
+      print(f"""
+            Média da turma: {self.soma:.1f}\n
+            Maior nota da Turma: {self.maior_nota}\n
+            Menor nota da Turma: {self.menor_nota}\n
+            """)
       
-
-
+      
   def imprimir(self):
-        arquivo = open(f"Notas.txt", "a")
+        
+        arquivo = open(f"Relatorio.txt", "a")
 
         arquivo.write("--------Boletim--------\n")
-        arquivo.write(f"Nome: {self.nome} | Matrícula: {self.matricula}\n")
-        arquivo.write(f"Notas: {self.nota}\n")
+        arquivo.write(f"Menor Nota: {self.menor_nota}\n")
         arquivo.write("------------------------\n")
+        arquivo.write(f"Maior Nota: {self.maior_nota}\n")
+        arquivo.write("------------------------\n")
+        arquivo.write(f"Média da turma: {self.soma:.1f}\n")
 
         arquivo.close()
 
-        print("Arquivo Salvo com sucesso!")
+        print("Arquivo Salvo com sucesso!")    
+      
 
+
+  
 
 
 
@@ -153,26 +179,50 @@ def limpar_tela():
   os.system('cls' if os.name == 'nt' else 'clear')
 
 
-aluno = Alunos()
-aluno.gerarRelatorio()
 
-# while True:
-#   resposta = input("Deseja cadastrar um novo aluno? (s/n): ")
-#   print(resposta)
-#   if resposta.lower() == "s":
-#     aluno = Alunos()
-#     aluno.cadastrar()
-#     aluno.imprimir()
-#     limpar_tela()
+
+while True:
+    print("""[1] Cadastrar aluno\n
+    [2] Deletar aluno\n
+    [3] Atualizar nota\n
+    [4] Listar alunos\n
+    [5] Gerar relatório\n
+    [6] Sair\n
+          """)
+    resposta = input("Escolha uma opção: ")
+    if resposta == "1":
+        aluno = Alunos()
+        aluno.cadastrar()
+        limpar_tela()
     
-#   else:
-#     resposta= input("Deseja deletar?(s/n): ")
-#     if resposta.lower() == "s":
-#         aluno = Alunos()
-#         aluno.deletarAluno()
+    elif resposta == "2":
+        resposta= input("Deseja deletar?(s/n): ")
+        aluno = Alunos()
+        aluno.deletarAluno()
         
-#     else:
-#         break
+         
+    
+    elif resposta == "3":
+        aluno = Alunos()
+        aluno.updateNota()
+        
+
+    elif resposta == "4":
+        aluno = Alunos()
+        aluno.listarAlunos()
+        
+        
+
+    elif resposta == "5":
+        aluno = Alunos()
+        aluno.gerarRelatorio()
+        aluno.imprimir()
+        
+
+    elif resposta == "6":
+        
+        print("Até outro dia!")
+        break 
         
           
       
